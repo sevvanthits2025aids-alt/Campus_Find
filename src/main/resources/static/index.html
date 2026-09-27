@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>CampusFind - Lost & Found</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- ================= SIDEBAR ================= -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            <h2>CampusFind</h2>
+            <p>Lost & Found System</p>
+        </div>
+
+        <nav>
+
+            <button class="menu-btn active"
+                    onclick="showSection('dashboard', this)">
+                🏠 Dashboard
+            </button>
+
+            <button class="menu-btn"
+                    onclick="showSection('users', this)">
+                👤 Users
+            </button>
+
+            <button class="menu-btn"
+                    onclick="showSection('categories', this)">
+                📁 Categories
+            </button>
+
+            <button class="menu-btn"
+                    onclick="showSection('lost', this)">
+                🔍 Lost Reports
+            </button>
+
+            <button class="menu-btn"
+                    onclick="showSection('found', this)">
+                📦 Found Items
+            </button>
+
+        </nav>
+
+    </aside>
+
+
+    <!-- ================= MAIN ================= -->
+
+    <main class="main">
+
+        <header class="top-header">
+
+            <div>
+                <h1>Campus Lost & Found</h1>
+                <p>Manage campus lost and found items easily</p>
+            </div>
+
+        </header>
+
+
+        <!-- ================= DASHBOARD ================= -->
+
+        <section id="dashboard" class="section">
+
+            <div class="section-title">
+
+                <div>
+                    <h2>Dashboard</h2>
+                    <p>Overview of CampusFind</p>
+                </div>
+
+            </div>
+
+
+            <div class="dashboard-cards">
+
+                <div class="dashboard-card">
+                    <div class="card-icon">👤</div>
+                    <div>
+                        <p>Total Users</p>
+                        <h3 id="userCount">0</h3>
+                    </div>
+                </div>
+
+
+                <div class="dashboard-card">
+                    <div class="card-icon">📁</div>
+                    <div>
+                        <p>Total Categories</p>
+                        <h3 id="categoryCount">0</h3>
+                    </div>
+                </div>
+
+
+                <div class="dashboard-card">
+                    <div class="card-icon">🔍</div>
+                    <div>
+                        <p>Lost Reports</p>
+                        <h3 id="lostCount">0</h3>
+                    </div>
+                </div>
+
+
+                <div class="dashboard-card">
+                    <div class="card-icon">📦</div>
+                    <div>
+                        <p>Found Items</p>
+                        <h3 id="foundCount">0</h3>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= USERS ================= -->
+
+        <section id="users" class="section hidden">
+
+            <div class="section-title">
+
+                <div>
+                    <h2>User Management</h2>
+                    <p>Add, update, view and delete users</p>
+                </div>
+
+            </div>
+
+
+            <div class="form-card">
+
+                <h3 id="userFormTitle">Add New User</h3>
+
+                <input type="hidden" id="userId">
+
+
+                <label>Name</label>
+                <input type="text"
+                       id="userName"
+                       placeholder="Enter user name">
+
+
+                <label>Email</label>
+                <input type="email"
+                       id="userEmail"
+                       placeholder="Enter email">
+
+
+                <label>Password</label>
+                <input type="password"
+                       id="userPassword"
+                       placeholder="Enter password">
+
+
+                <label>Role</label>
+
+                <select id="userRole">
+
+                    <option value="">Select Role</option>
+
+                    <option value="STUDENT">
+                        Student
+                    </option>
+
+                    <option value="STAFF">
+                        Staff
+                    </option>
+
+                    <option value="ADMIN">
+                        Admin
+                    </option>
+
+                </select>
+
+
+                <div class="form-buttons">
+
+                    <button class="primary-btn"
+                            onclick="saveUser()">
+                        Add User
+                    </button>
+
+                    <button class="secondary-btn"
+                            onclick="clearUserForm()">
+                        Clear
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="table-card">
+
+                <div class="table-header">
+
+                    <h3>All Users</h3>
+
+                    <button class="refresh-btn"
+                            onclick="loadUsers()">
+                        Refresh
+                    </button>
+
+                </div>
+
+                <div id="userList"></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= CATEGORIES ================= -->
+
+        <section id="categories" class="section hidden">
+
+            <div class="section-title">
+
+                <div>
+                    <h2>Category Management</h2>
+                    <p>Add, update, view and delete categories</p>
+                </div>
+
+            </div>
+
+
+            <div class="form-card">
+
+                <h3 id="categoryFormTitle">Add New Category</h3>
+
+                <input type="hidden" id="categoryId">
+
+
+                <label>Category Name</label>
+
+                <input type="text"
+                       id="categoryName"
+                       placeholder="Example: Electronics">
+
+
+                <div class="form-buttons">
+
+                    <button class="primary-btn"
+                            onclick="saveCategory()">
+                        Add Category
+                    </button>
+
+                    <button class="secondary-btn"
+                            onclick="clearCategoryForm()">
+                        Clear
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="table-card">
+
+                <div class="table-header">
+
+                    <h3>All Categories</h3>
+
+                    <button class="refresh-btn"
+                            onclick="loadCategories()">
+                        Refresh
+                    </button>
+
+                </div>
+
+                <div id="categoryList"></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= LOST REPORTS ================= -->
+
+        <section id="lost" class="section hidden">
+
+            <div class="section-title">
+
+                <div>
+                    <h2>Lost Report Management</h2>
+                    <p>Report and manage lost items</p>
+                </div>
+
+            </div>
+
+
+            <div class="form-card">
+
+                <h3 id="lostFormTitle">Add Lost Report</h3>
+
+                <input type="hidden" id="lostId">
+
+
+                <label>Item Description</label>
+
+                <input type="text"
+                       id="lostDescription"
+                       placeholder="Example: Black wireless earbuds">
+
+
+                <label>Location</label>
+
+                <input type="text"
+                       id="lostLocation"
+                       placeholder="Example: Library">
+
+
+                <label>Lost Date</label>
+
+                <input type="date"
+                       id="lostDate">
+
+
+                <label>Category</label>
+
+                <select id="lostCategory">
+
+                    <option value="">
+                        Select Category
+                    </option>
+
+                </select>
+
+
+                <label>Reported By</label>
+
+                <select id="lostUser">
+
+                    <option value="">
+                        Select User
+                    </option>
+
+                </select>
+
+
+                <div class="form-buttons">
+
+                    <button class="primary-btn"
+                            onclick="saveLostReport()">
+                        Add Lost Report
+                    </button>
+
+                    <button class="secondary-btn"
+                            onclick="clearLostForm()">
+                        Clear
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="table-card">
+
+                <div class="table-header">
+
+                    <h3>All Lost Reports</h3>
+
+                    <button class="refresh-btn"
+                            onclick="loadLostReports()">
+                        Refresh
+                    </button>
+
+                </div>
+
+                <div id="lostList"></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= FOUND ITEMS ================= -->
+
+        <section id="found" class="section hidden">
+
+            <div class="section-title">
+
+                <div>
+                    <h2>Found Item Management</h2>
+                    <p>Add, update, view and delete found items</p>
+                </div>
+
+            </div>
+
+
+            <div class="form-card">
+
+                <h3 id="foundFormTitle">Add Found Item</h3>
+
+                <input type="hidden" id="foundId">
+
+
+                <label>Item Description</label>
+
+                <input type="text"
+                       id="foundDescription"
+                       placeholder="Example: Black wireless earbuds">
+
+
+                <label>Location</label>
+
+                <input type="text"
+                       id="foundLocation"
+                       placeholder="Example: Library">
+
+
+                <label>Found Date</label>
+
+                <input type="date"
+                       id="foundDate">
+
+
+                <label>Category</label>
+
+                <select id="foundCategory">
+
+                    <option value="">
+                        Select Category
+                    </option>
+
+                </select>
+
+
+                <label>Found By</label>
+
+                <select id="foundUser">
+
+                    <option value="">
+                        Select User
+                    </option>
+
+                </select>
+
+
+                <div class="form-buttons">
+
+                    <button class="primary-btn"
+                            onclick="saveFoundItem()">
+                        Add Found Item
+                    </button>
+
+                    <button class="secondary-btn"
+                            onclick="clearFoundForm()">
+                        Clear
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="table-card">
+
+                <div class="table-header">
+
+                    <h3>All Found Items</h3>
+
+                    <button class="refresh-btn"
+                            onclick="loadFoundItems()">
+                        Refresh
+                    </button>
+
+                </div>
+
+                <div id="foundList"></div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
