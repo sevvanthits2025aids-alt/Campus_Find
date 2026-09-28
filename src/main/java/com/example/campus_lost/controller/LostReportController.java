@@ -12,22 +12,29 @@ public class LostReportController {
 
     private final LostReportService lostReportService;
 
-    public LostReportController(LostReportService lostReportService) {
+    public LostReportController(
+            LostReportService lostReportService) {
+
         this.lostReportService = lostReportService;
     }
 
     @PostMapping
-    public LostReport createLostReport(@RequestBody LostReport lostReport) {
+    public LostReport createLostReport(
+            @RequestBody LostReport lostReport) {
+
         return lostReportService.createLostReport(lostReport);
     }
 
     @GetMapping
     public List<LostReport> getAllLostReports() {
+
         return lostReportService.getAllLostReports();
     }
 
     @GetMapping("/{id}")
-    public LostReport getLostReportById(@PathVariable Long id) {
+    public LostReport getLostReportById(
+            @PathVariable Long id) {
+
         return lostReportService.getLostReportById(id);
     }
 
@@ -36,11 +43,14 @@ public class LostReportController {
             @PathVariable Long id,
             @RequestBody LostReport lostReport) {
 
-        return lostReportService.updateLostReport(id, lostReport);
+        return lostReportService.updateLostReport(
+                id,
+                lostReport);
     }
 
     @DeleteMapping("/{id}")
-    public String deleteLostReport(@PathVariable Long id) {
+    public String deleteLostReport(
+            @PathVariable Long id) {
 
         lostReportService.deleteLostReport(id);
 

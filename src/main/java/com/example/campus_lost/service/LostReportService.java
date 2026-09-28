@@ -15,35 +15,66 @@ public class LostReportService {
         this.lostReportRepository = lostReportRepository;
     }
 
+    // CREATE
     public LostReport createLostReport(LostReport lostReport) {
+
         return lostReportRepository.save(lostReport);
     }
 
+    // READ ALL
     public List<LostReport> getAllLostReports() {
+
         return lostReportRepository.findAll();
     }
 
+    // READ BY ID
     public LostReport getLostReportById(Long id) {
+
         return lostReportRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Lost report not found"));
+                .orElseThrow(() ->
+                        new RuntimeException("Lost report not found"));
     }
 
-    public LostReport updateLostReport(Long id, LostReport lostReport) {
+    // UPDATE
+    public LostReport updateLostReport(
+            Long id,
+            LostReport lostReport) {
 
-        LostReport existingReport = getLostReportById(id);
+        LostReport existingReport =
+                getLostReportById(id);
 
-        existingReport.setDescription(lostReport.getDescription());
-        existingReport.setLocation(lostReport.getLocation());
-        existingReport.setDate(lostReport.getDate());
-        existingReport.setCategory(lostReport.getCategory());
-        existingReport.setUser(lostReport.getUser());
+        existingReport.setDescription(
+                lostReport.getDescription());
+
+        existingReport.setBrand(
+                lostReport.getBrand());
+
+        existingReport.setColor(
+                lostReport.getColor());
+
+        existingReport.setIdentifyingDetails(
+                lostReport.getIdentifyingDetails());
+
+        existingReport.setLocation(
+                lostReport.getLocation());
+
+        existingReport.setDate(
+                lostReport.getDate());
+
+        existingReport.setCategory(
+                lostReport.getCategory());
+
+        existingReport.setUser(
+                lostReport.getUser());
 
         return lostReportRepository.save(existingReport);
     }
 
+    // DELETE
     public void deleteLostReport(Long id) {
 
-        LostReport existingReport = getLostReportById(id);
+        LostReport existingReport =
+                getLostReportById(id);
 
         lostReportRepository.delete(existingReport);
     }

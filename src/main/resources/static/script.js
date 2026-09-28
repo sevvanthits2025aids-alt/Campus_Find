@@ -1,28 +1,62 @@
-// =====================================================
-// NAVIGATION
-// =====================================================
+console.log("CampusFind script loaded successfully");
 
-function showSection(sectionId, button) {
+const API = "http://localhost:8080";
 
-    const sections = document.querySelectorAll(".section");
 
-    sections.forEach(section => {
-        section.classList.add("hidden");
+// ======================================================
+// SHOW SECTION
+// ======================================================
+
+function showSection(sectionId) {
+
+    document.querySelectorAll(".content-section").forEach(section => {
+        section.classList.remove("active-section");
     });
 
-    document.getElementById(sectionId).classList.remove("hidden");
+    const section = document.getElementById(sectionId);
 
-
-    const buttons = document.querySelectorAll(".menu-btn");
-
-    buttons.forEach(btn => {
-        btn.classList.remove("active");
-    });
-
-    if (button) {
-        button.classList.add("active");
+    if (section) {
+        section.classList.add("active-section");
     }
 
+    const titles = {
+        dashboard: "Dashboard",
+        users: "Users",
+        "add-user": "Add User",
+        categories: "Categories",
+        "add-category": "Add Category",
+        "lost-reports": "Lost Reports",
+        "add-lost": "Report Lost Item",
+        "found-items": "Found Items",
+        "add-found": "Report Found Item"
+    };
+
+    const descriptions = {
+        dashboard: "Campus Lost & Found Management System",
+        users: "Manage students, staff and admins.",
+        "add-user": "Create a new CampusFind user.",
+        categories: "Manage item categories.",
+        "add-category": "Create a new item category.",
+        "lost-reports": "View all reported lost items.",
+        "add-lost": "Enter details about the lost item.",
+        "found-items": "View and manage found items.",
+        "add-found": "Enter details about the found item."
+    };
+
+    const pageTitle = document.getElementById("pageTitle");
+    const pageDescription = document.getElementById("pageDescription");
+
+    if (pageTitle) {
+        pageTitle.textContent = titles[sectionId] || "CampusFind";
+    }
+
+    if (pageDescription) {
+        pageDescription.textContent = descriptions[sectionId] || "";
+    }
+
+    if (sectionId === "dashboard") {
+        loadDashboard();
+    }
 
     if (sectionId === "users") {
         loadUsers();
@@ -32,124 +66,290 @@ function showSection(sectionId, button) {
         loadCategories();
     }
 
-    if (sectionId === "lost") {
-        loadCategoriesForForms();
-        loadUsersForForms();
+    if (sectionId === "lost-reports") {
         loadLostReports();
     }
 
-    if (sectionId === "found") {
-        loadCategoriesForForms();
-        loadUsersForForms();
+    if (sectionId === "found-items") {
         loadFoundItems();
     }
-
-    if (sectionId === "dashboard") {
-        loadDashboard();
-    }
 }
 
 
-// =====================================================
+// ======================================================
+// SIDEBAR DROPDOWN
+// ======================================================
+
+document.querySelectorAll(".dropdown-btn").forEach(button => {
+
+    button.addEventListener("click", function () {
+
+        const group = this.parentElement;
+        const submenu = group.querySelector(".submenu");
+        const arrow = group.querySelector(".arrow");
+
+        document.querySelectorAll(".menu-group").forEach(otherGroup => {
+
+            if (otherGroup !== group) {
+
+                const otherSubmenu =
+                    otherGroup.querySelector(".submenu");
+
+                const otherArrow =
+                    otherGroup.querySelector(".arrow");
+
+                if (otherSubmenu) {
+                    otherSubmenu.classList.remove("open");
+                }
+
+                if (otherArrow) {
+                    otherArrow.classList.remove("rotate");
+                }
+            }
+        });
+
+        if (submenu) {
+            submenu.classList.toggle("open");
+        }
+
+        if (arrow) {
+            arrow.classList.toggle("rotate");
+        }
+    });
+});
+
+
+// ======================================================
+// SUBMENU BUTTONS
+// ======================================================
+
+document.querySelectorAll(".submenu-item").forEach(button => {
+
+    button.addEventListener("click", function () {
+
+        const section = this.getAttribute("data-section");
+
+        if (section) {
+            showSection(section);
+        }
+    });
+});
+
+
+// ======================================================
 // DASHBOARD
-// =====================================================
+// ======================================================
 
-function loadDashboard() {
+async function loadDashboard() {
 
-    fetch("/users")
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById("userCount").innerText = data.length;
-        });
+    try {
 
+        const usersResponse =
+            await fetch(API + "/users");
 
-    fetch("/categories")
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById("categoryCount").innerText = data.length;
-        });
+        const categoriesResponse =
+            await fetch(API + "/categories");
 
+        const lostResponse =
+            await fetch(API + "/lost-reports");
 
-    fetch("/lost-reports")
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById("lostCount").innerText = data.length;
-        });
+        const foundResponse =
+            await fetch(API + "/found-items");
 
 
-    fetch("/found-items")
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById("foundCount").innerText = data.length;
-        });
+        const users = await usersResponse.json();
+        const categories = await categoriesResponse.json();
+        const lostReports = await lostResponse.json();
+        const foundItems = await foundResponse.json();
+
+
+        const userCount =
+            document.getElementById("userCount");
+
+        const categoryCount =
+            document.getElementById("categoryCount");
+
+        const lostCount =
+            document.getElementById("lostCount");
+
+        const foundCount =
+            document.getElementById("foundCount");
+
+
+        if (userCount) {
+            userCount.textContent = users.length;
+        }
+
+        if (categoryCount) {
+            categoryCount.textContent = categories.length;
+        }
+
+        if (lostCount) {
+            lostCount.textContent = lostReports.length;
+        }
+
+        if (foundCount) {
+            foundCount.textContent = foundItems.length;
+        }
+
+    } catch (error) {
+
+        console.error("Dashboard error:", error);
+
+    }
 }
 
 
-// =====================================================
-// USERS - ADD / UPDATE
-// =====================================================
+// ======================================================
+// USERS - LOAD
+// ======================================================
 
-function saveUser() {
+async function loadUsers() {
 
-    const id = document.getElementById("userId").value;
+    try {
 
-    const user = {
+        const response =
+            await fetch(API + "/users");
 
-        name: document.getElementById("userName").value,
+        if (!response.ok) {
+            throw new Error("Unable to load users");
+        }
 
-        email: document.getElementById("userEmail").value,
+        const users = await response.json();
 
-        password: document.getElementById("userPassword").value,
+        const table =
+            document.getElementById("usersTable");
 
-        role: document.getElementById("userRole").value
-    };
+        if (!table) return;
+
+        table.innerHTML = "";
+
+        if (users.length === 0) {
+
+            table.innerHTML = `
+                <tr>
+                    <td colspan="5" class="empty">
+                        No users found
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
 
 
-    if (!user.name ||
-        !user.email ||
-        !user.password ||
-        !user.role) {
+        users.forEach(user => {
 
-        alert("Please fill all user fields");
+            table.innerHTML += `
+                <tr>
 
-        return;
+                    <td>${user.id}</td>
+
+                    <td>${user.name || "-"}</td>
+
+                    <td>${user.email || "-"}</td>
+
+                    <td>
+                        <span class="badge">
+                            ${user.role || "-"}
+                        </span>
+                    </td>
+
+                    <td>
+
+                        <button
+                            class="edit-btn"
+                            onclick="editUser(${user.id})">
+                            Edit
+                        </button>
+
+                        <button
+                            class="delete-btn"
+                            onclick="deleteUser(${user.id})">
+                            Delete
+                        </button>
+
+                    </td>
+
+                </tr>
+            `;
+        });
+
+    } catch (error) {
+
+        console.error("Users error:", error);
+
     }
+}
 
 
-    let url = "/users";
+// ======================================================
+// USERS - SAVE
+// ======================================================
 
-    let method = "POST";
+const userForm =
+    document.getElementById("userForm");
+
+if (userForm) {
+
+    userForm.addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+        const id =
+            document.getElementById("userId").value;
+
+        const user = {
+
+            name:
+                document.getElementById("userName").value.trim(),
+
+            email:
+                document.getElementById("userEmail").value.trim(),
+
+            password:
+            document.getElementById("userPassword").value,
+
+            role:
+            document.getElementById("userRole").value
+        };
 
 
-    if (id) {
+        try {
 
-        url = `/users/${id}`;
+            const url =
+                id
+                    ? `${API}/users/${id}`
+                    : `${API}/users`;
 
-        method = "PUT";
-    }
+            const method =
+                id ? "PUT" : "POST";
 
 
-    fetch(url, {
+            const response =
+                await fetch(url, {
 
-        method: method,
+                    method: method,
 
-        headers: {
-            "Content-Type": "application/json"
-        },
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
 
-        body: JSON.stringify(user)
+                    body: JSON.stringify(user)
+                });
 
-    })
-        .then(response => {
+
+            const responseText =
+                await response.text();
+
 
             if (!response.ok) {
-                throw new Error("User operation failed");
+
+                throw new Error(
+                    responseText || "User save failed"
+                );
             }
 
-            return response.json();
-        })
-
-        .then(data => {
 
             alert(
                 id
@@ -157,270 +357,283 @@ function saveUser() {
                     : "User added successfully!"
             );
 
-            clearUserForm();
 
-            loadUsers();
+            resetUserForm();
 
-            loadDashboard();
-        })
+            await loadUsers();
+            await loadDashboard();
 
-        .catch(error => {
-
-            console.error(error);
-
-            alert("Error saving user");
-        });
-}
+            showSection("users");
 
 
-// =====================================================
-// USERS - VIEW
-// =====================================================
+        } catch (error) {
 
-function loadUsers() {
+            console.error("USER ERROR:", error);
 
-    fetch("/users")
+            alert(
+                "Unable to save user.\n\n" +
+                error.message
+            );
+        }
 
-        .then(response => response.json())
-
-        .then(users => {
-
-            let html = "";
-
-
-            if (users.length === 0) {
-
-                html = `
-                    <div class="empty-message">
-                        No users found
-                    </div>
-                `;
-
-            } else {
-
-                html = `
-                    <table class="data-table">
-
-                        <thead>
-
-                            <tr>
-                                <th>ID</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Actions</th>
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-                `;
-
-
-                users.forEach(user => {
-
-                    html += `
-
-                        <tr>
-
-                            <td>${user.id}</td>
-
-                            <td>${user.name}</td>
-
-                            <td>${user.email}</td>
-
-                            <td>${user.role}</td>
-
-                            <td>
-
-                                <button class="edit-btn"
-                                    onclick="editUser(
-                                        ${user.id},
-                                        '${escapeText(user.name)}',
-                                        '${escapeText(user.email)}',
-                                        '${escapeText(user.password)}',
-                                        '${user.role}'
-                                    )">
-                                    Edit
-                                </button>
-
-                                <button class="delete-btn"
-                                    onclick="deleteUser(${user.id})">
-                                    Delete
-                                </button>
-
-                            </td>
-
-                        </tr>
-
-                    `;
-                });
-
-
-                html += `
-                        </tbody>
-                    </table>
-                `;
-            }
-
-
-            document.getElementById("userList").innerHTML = html;
-        });
-}
-
-
-// =====================================================
-// USERS - EDIT
-// =====================================================
-
-function editUser(id, name, email, password, role) {
-
-    document.getElementById("userId").value = id;
-
-    document.getElementById("userName").value = name;
-
-    document.getElementById("userEmail").value = email;
-
-    document.getElementById("userPassword").value = password;
-
-    document.getElementById("userRole").value = role;
-
-
-    document.getElementById("userFormTitle").innerText =
-        "Update User";
-
-
-    document.querySelector("#users .primary-btn").innerText =
-        "Update User";
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
     });
 }
 
 
-// =====================================================
-// USERS - DELETE
-// =====================================================
+// ======================================================
+// USERS - EDIT
+// ======================================================
 
-function deleteUser(id) {
+async function editUser(id) {
+
+    try {
+
+        const response =
+            await fetch(`${API}/users/${id}`);
+
+        if (!response.ok) {
+            throw new Error("Unable to load user");
+        }
+
+        const user =
+            await response.json();
+
+
+        document.getElementById("userId").value =
+            user.id;
+
+        document.getElementById("userName").value =
+            user.name || "";
+
+        document.getElementById("userEmail").value =
+            user.email || "";
+
+        document.getElementById("userPassword").value =
+            user.password || "";
+
+        document.getElementById("userRole").value =
+            user.role || "";
+
+
+        showSection("add-user");
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("Unable to load user.");
+
+    }
+}
+
+
+// ======================================================
+// USERS - DELETE
+// ======================================================
+
+async function deleteUser(id) {
 
     if (!confirm("Are you sure you want to delete this user?")) {
         return;
     }
 
 
-    fetch(`/users/${id}`, {
+    try {
 
-        method: "DELETE"
-
-    })
-
-        .then(response => {
-
-            if (!response.ok) {
-                throw new Error("Delete failed");
-            }
-
-            return response.text();
-        })
-
-        .then(data => {
-
-            alert("User deleted successfully!");
-
-            loadUsers();
-
-            loadDashboard();
-        })
-
-        .catch(error => {
-
-            console.error(error);
-
-            alert("Error deleting user");
-        });
-}
+        const response =
+            await fetch(
+                `${API}/users/${id}`,
+                {
+                    method: "DELETE"
+                }
+            );
 
 
-// =====================================================
-// USERS - CLEAR
-// =====================================================
-
-function clearUserForm() {
-
-    document.getElementById("userId").value = "";
-
-    document.getElementById("userName").value = "";
-
-    document.getElementById("userEmail").value = "";
-
-    document.getElementById("userPassword").value = "";
-
-    document.getElementById("userRole").value = "";
+        if (!response.ok) {
+            throw new Error("Delete failed");
+        }
 
 
-    document.getElementById("userFormTitle").innerText =
-        "Add New User";
+        alert("User deleted successfully!");
+
+        await loadUsers();
+        await loadDashboard();
 
 
-    document.querySelector("#users .primary-btn").innerText =
-        "Add User";
-}
+    } catch (error) {
 
+        console.error(error);
 
-// =====================================================
-// CATEGORY - ADD / UPDATE
-// =====================================================
-
-function saveCategory() {
-
-    const id = document.getElementById("categoryId").value;
-
-    const category = {
-
-        name:
-        document.getElementById("categoryName").value
-    };
-
-
-    if (!category.name) {
-
-        alert("Please enter category name");
-
-        return;
+        alert(
+            "Unable to delete user.\n\n" +
+            error.message
+        );
     }
+}
 
 
-    let url = "/categories";
+// ======================================================
+// USERS - RESET
+// ======================================================
 
-    let method = "POST";
+function resetUserForm() {
 
+    const form =
+        document.getElementById("userForm");
+
+    const id =
+        document.getElementById("userId");
+
+    if (form) {
+        form.reset();
+    }
 
     if (id) {
-
-        url = `/categories/${id}`;
-
-        method = "PUT";
+        id.value = "";
     }
+}
 
 
-    fetch(url, {
+// ======================================================
+// CATEGORIES - LOAD
+// ======================================================
 
-        method: method,
+async function loadCategories() {
 
-        headers: {
-            "Content-Type": "application/json"
-        },
+    try {
 
-        body: JSON.stringify(category)
+        const response =
+            await fetch(API + "/categories");
 
-    })
+        if (!response.ok) {
+            throw new Error("Unable to load categories");
+        }
 
-        .then(response => response.json())
+        const categories =
+            await response.json();
 
-        .then(data => {
+        const table =
+            document.getElementById("categoriesTable");
+
+        if (!table) return;
+
+        table.innerHTML = "";
+
+
+        if (categories.length === 0) {
+
+            table.innerHTML = `
+                <tr>
+                    <td colspan="3" class="empty">
+                        No categories found
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+
+        categories.forEach(category => {
+
+            table.innerHTML += `
+                <tr>
+
+                    <td>${category.id}</td>
+
+                    <td>${category.name || "-"}</td>
+
+                    <td>
+
+                        <button
+                            class="edit-btn"
+                            onclick="editCategory(${category.id})">
+                            Edit
+                        </button>
+
+                        <button
+                            class="delete-btn"
+                            onclick="deleteCategory(${category.id})">
+                            Delete
+                        </button>
+
+                    </td>
+
+                </tr>
+            `;
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "Category error:",
+            error
+        );
+    }
+}
+
+
+// ======================================================
+// CATEGORY - SAVE
+// ======================================================
+
+const categoryForm =
+    document.getElementById("categoryForm");
+
+if (categoryForm) {
+
+    categoryForm.addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+
+        const id =
+            document.getElementById("categoryId").value;
+
+        const name =
+            document.getElementById("categoryName").value.trim();
+
+
+        if (!name) {
+
+            alert("Please enter category name.");
+
+            return;
+        }
+
+
+        try {
+
+            const url =
+                id
+                    ? `${API}/categories/${id}`
+                    : `${API}/categories`;
+
+            const method =
+                id ? "PUT" : "POST";
+
+
+            const response =
+                await fetch(url, {
+
+                    method: method,
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        name: name
+                    })
+                });
+
+
+            if (!response.ok) {
+                throw new Error("Category save failed");
+            }
+
 
             alert(
                 id
@@ -428,357 +641,342 @@ function saveCategory() {
                     : "Category added successfully!"
             );
 
-            clearCategoryForm();
 
-            loadCategories();
+            resetCategoryForm();
 
-            loadDashboard();
-        })
+            await loadCategories();
+            await loadDashboard();
 
-        .catch(error => {
+            showSection("categories");
+
+
+        } catch (error) {
 
             console.error(error);
 
-            alert("Error saving category");
-        });
-}
+            alert(
+                "Unable to save category.\n\n" +
+                error.message
+            );
+        }
 
-
-// =====================================================
-// CATEGORY - VIEW
-// =====================================================
-
-function loadCategories() {
-
-    fetch("/categories")
-
-        .then(response => response.json())
-
-        .then(categories => {
-
-            let html = "";
-
-
-            if (categories.length === 0) {
-
-                html = `
-                    <div class="empty-message">
-                        No categories found
-                    </div>
-                `;
-
-            } else {
-
-                html = `
-                    <table class="data-table">
-
-                        <thead>
-
-                            <tr>
-                                <th>ID</th>
-                                <th>Category Name</th>
-                                <th>Actions</th>
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-                `;
-
-
-                categories.forEach(category => {
-
-                    html += `
-
-                        <tr>
-
-                            <td>${category.id}</td>
-
-                            <td>${category.name}</td>
-
-                            <td>
-
-                                <button class="edit-btn"
-                                    onclick="editCategory(
-                                        ${category.id},
-                                        '${escapeText(category.name)}'
-                                    )">
-                                    Edit
-                                </button>
-
-                                <button class="delete-btn"
-                                    onclick="deleteCategory(${category.id})">
-                                    Delete
-                                </button>
-
-                            </td>
-
-                        </tr>
-
-                    `;
-                });
-
-
-                html += `
-                        </tbody>
-                    </table>
-                `;
-            }
-
-
-            document.getElementById("categoryList").innerHTML =
-                html;
-        });
-}
-
-
-// =====================================================
-// CATEGORY - EDIT
-// =====================================================
-
-function editCategory(id, name) {
-
-    document.getElementById("categoryId").value = id;
-
-    document.getElementById("categoryName").value = name;
-
-
-    document.getElementById("categoryFormTitle").innerText =
-        "Update Category";
-
-
-    document.querySelector("#categories .primary-btn").innerText =
-        "Update Category";
-
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
     });
 }
 
 
-// =====================================================
+// ======================================================
+// CATEGORY - EDIT
+// ======================================================
+
+async function editCategory(id) {
+
+    try {
+
+        const response =
+            await fetch(`${API}/categories/${id}`);
+
+        if (!response.ok) {
+            throw new Error("Unable to load category");
+        }
+
+        const category =
+            await response.json();
+
+
+        document.getElementById("categoryId").value =
+            category.id;
+
+        document.getElementById("categoryName").value =
+            category.name || "";
+
+
+        showSection("add-category");
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("Unable to load category.");
+
+    }
+}
+
+
+// ======================================================
 // CATEGORY - DELETE
-// =====================================================
+// ======================================================
 
-function deleteCategory(id) {
+async function deleteCategory(id) {
 
-    if (!confirm("Are you sure you want to delete this category?")) {
+    if (!confirm("Delete this category?")) {
         return;
     }
 
 
-    fetch(`/categories/${id}`, {
+    try {
 
-        method: "DELETE"
+        const response =
+            await fetch(
+                `${API}/categories/${id}`,
+                {
+                    method: "DELETE"
+                }
+            );
 
-    })
 
-        .then(response => response.text())
+        if (!response.ok) {
+            throw new Error("Delete failed");
+        }
 
-        .then(data => {
 
-            alert("Category deleted successfully!");
+        alert("Category deleted successfully!");
 
-            loadCategories();
+        await loadCategories();
+        await loadDashboard();
 
-            loadDashboard();
 
-        })
+    } catch (error) {
 
-        .catch(error => {
+        console.error(error);
 
-            console.error(error);
-
-            alert("Error deleting category");
-        });
+        alert(
+            "Unable to delete category.\n\n" +
+            error.message
+        );
+    }
 }
 
 
-// =====================================================
-// CATEGORY - CLEAR
-// =====================================================
+// ======================================================
+// CATEGORY - RESET
+// ======================================================
 
-function clearCategoryForm() {
+function resetCategoryForm() {
 
-    document.getElementById("categoryId").value = "";
-
-    document.getElementById("categoryName").value = "";
-
-
-    document.getElementById("categoryFormTitle").innerText =
-        "Add New Category";
-
-
-    document.querySelector("#categories .primary-btn").innerText =
-        "Add Category";
-}
-
-
-// =====================================================
-// LOAD USERS INTO DROPDOWN
-// =====================================================
-
-function loadUsersForForms() {
-
-    fetch("/users")
-
-        .then(response => response.json())
-
-        .then(users => {
-
-            const lostSelect =
-                document.getElementById("lostUser");
-
-            const foundSelect =
-                document.getElementById("foundUser");
-
-
-            let options = `
-                <option value="">
-                    Select User
-                </option>
-            `;
-
-
-            users.forEach(user => {
-
-                options += `
-                    <option value="${user.id}">
-                        ${user.name} - ${user.role}
-                    </option>
-                `;
-            });
-
-
-            lostSelect.innerHTML = options;
-
-            foundSelect.innerHTML = options;
-        });
-}
-
-
-// =====================================================
-// LOAD CATEGORIES INTO DROPDOWN
-// =====================================================
-
-function loadCategoriesForForms() {
-
-    fetch("/categories")
-
-        .then(response => response.json())
-
-        .then(categories => {
-
-            const lostSelect =
-                document.getElementById("lostCategory");
-
-            const foundSelect =
-                document.getElementById("foundCategory");
-
-
-            let options = `
-                <option value="">
-                    Select Category
-                </option>
-            `;
-
-
-            categories.forEach(category => {
-
-                options += `
-                    <option value="${category.id}">
-                        ${category.name}
-                    </option>
-                `;
-            });
-
-
-            lostSelect.innerHTML = options;
-
-            foundSelect.innerHTML = options;
-        });
-}
-
-
-// =====================================================
-// LOST REPORT - ADD / UPDATE
-// =====================================================
-
-function saveLostReport() {
+    const form =
+        document.getElementById("categoryForm");
 
     const id =
-        document.getElementById("lostId").value;
+        document.getElementById("categoryId");
 
-
-    const lostReport = {
-
-        description:
-        document.getElementById("lostDescription").value,
-
-        location:
-        document.getElementById("lostLocation").value,
-
-        date:
-        document.getElementById("lostDate").value,
-
-        category: {
-
-            id:
-            document.getElementById("lostCategory").value
-        },
-
-        user: {
-
-            id:
-            document.getElementById("lostUser").value
-        }
-    };
-
-
-    if (
-        !lostReport.description ||
-        !lostReport.location ||
-        !lostReport.date ||
-        !lostReport.category.id ||
-        !lostReport.user.id
-    ) {
-
-        alert("Please fill all lost report fields");
-
-        return;
+    if (form) {
+        form.reset();
     }
-
-
-    let url = "/lost-reports";
-
-    let method = "POST";
-
 
     if (id) {
-
-        url = `/lost-reports/${id}`;
-
-        method = "PUT";
+        id.value = "";
     }
+}
 
 
-    fetch(url, {
+// ======================================================
+// LOST REPORTS - LOAD
+// ======================================================
 
-        method: method,
+async function loadLostReports() {
 
-        headers: {
-            "Content-Type": "application/json"
-        },
+    try {
 
-        body: JSON.stringify(lostReport)
+        const response =
+            await fetch(API + "/lost-reports");
 
-    })
+        if (!response.ok) {
+            throw new Error("Unable to load lost reports");
+        }
 
-        .then(response => response.json())
+        const reports =
+            await response.json();
 
-        .then(data => {
+        const table =
+            document.getElementById("lostTable");
+
+        if (!table) return;
+
+        table.innerHTML = "";
+
+
+        if (reports.length === 0) {
+
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7" class="empty">
+                        No lost reports found
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+
+        reports.forEach(report => {
+
+            table.innerHTML += `
+                <tr>
+
+                    <td>${report.id}</td>
+
+                    <td>${report.description || "-"}</td>
+
+                    <td>${report.brand || "-"}</td>
+
+                    <td>${report.color || "-"}</td>
+
+                    <td>${report.location || "-"}</td>
+
+                    <td>${report.date || "-"}</td>
+
+                    <td>
+
+                        <button
+                            class="edit-btn"
+                            onclick="editLost(${report.id})">
+                            Edit
+                        </button>
+
+                        <button
+                            class="delete-btn"
+                            onclick="deleteLost(${report.id})">
+                            Delete
+                        </button>
+
+                    </td>
+
+                </tr>
+            `;
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "Lost report error:",
+            error
+        );
+    }
+}
+
+
+// ======================================================
+// LOST REPORT - SAVE
+// ======================================================
+
+const lostForm =
+    document.getElementById("lostForm");
+
+if (lostForm) {
+
+    lostForm.addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+
+        const id =
+            document.getElementById("lostId").value;
+
+
+        const categoryId =
+            Number(
+                document.getElementById("lostCategory").value
+            );
+
+
+        const userId =
+            Number(
+                document.getElementById("lostUser").value
+            );
+
+
+        const report = {
+
+            description:
+                document
+                    .getElementById("lostDescription")
+                    .value
+                    .trim(),
+
+            brand:
+                document
+                    .getElementById("lostBrand")
+                    .value
+                    .trim(),
+
+            color:
+                document
+                    .getElementById("lostColor")
+                    .value
+                    .trim(),
+
+            identifyingDetails:
+                document
+                    .getElementById("lostDetails")
+                    .value
+                    .trim(),
+
+            location:
+                document
+                    .getElementById("lostLocation")
+                    .value
+                    .trim(),
+
+            date:
+            document
+                .getElementById("lostDate")
+                .value,
+
+            category: {
+                id: categoryId
+            },
+
+            user: {
+                id: userId
+            }
+        };
+
+
+        console.log(
+            "Sending Lost Report:",
+            report
+        );
+
+
+        try {
+
+            const url =
+                id
+                    ? `${API}/lost-reports/${id}`
+                    : `${API}/lost-reports`;
+
+            const method =
+                id ? "PUT" : "POST";
+
+
+            const response =
+                await fetch(url, {
+
+                    method: method,
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify(report)
+                });
+
+
+            const responseText =
+                await response.text();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    responseText ||
+                    "Lost report save failed"
+                );
+            }
+
 
             alert(
                 id
@@ -786,318 +984,437 @@ function saveLostReport() {
                     : "Lost report added successfully!"
             );
 
-            clearLostForm();
 
-            loadLostReports();
+            resetLostForm();
 
-            loadDashboard();
-        })
+            await loadLostReports();
+            await loadDashboard();
 
-        .catch(error => {
+            showSection("lost-reports");
 
-            console.error(error);
 
-            alert("Error saving lost report");
-        });
-}
+        } catch (error) {
 
+            console.error(
+                "LOST REPORT ERROR:",
+                error
+            );
 
-// =====================================================
-// LOST REPORT - VIEW
-// =====================================================
+            alert(
+                "Unable to save lost report.\n\n" +
+                error.message
+            );
+        }
 
-function loadLostReports() {
-
-    fetch("/lost-reports")
-
-        .then(response => response.json())
-
-        .then(reports => {
-
-            let html = "";
-
-
-            if (reports.length === 0) {
-
-                html = `
-                    <div class="empty-message">
-                        No lost reports found
-                    </div>
-                `;
-
-            } else {
-
-                html = `
-                    <table class="data-table">
-
-                        <thead>
-
-                            <tr>
-
-                                <th>ID</th>
-
-                                <th>Description</th>
-
-                                <th>Location</th>
-
-                                <th>Date</th>
-
-                                <th>Category</th>
-
-                                <th>User</th>
-
-                                <th>Actions</th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-                `;
-
-
-                reports.forEach(report => {
-
-                    html += `
-
-                        <tr>
-
-                            <td>${report.id}</td>
-
-                            <td>${report.description}</td>
-
-                            <td>${report.location}</td>
-
-                            <td>${report.date}</td>
-
-                            <td>
-                                ${report.category
-                        ? report.category.name
-                        : "-"}
-                            </td>
-
-                            <td>
-                                ${report.user
-                        ? report.user.name
-                        : "-"}
-                            </td>
-
-                            <td>
-
-                                <button class="edit-btn"
-                                    onclick='editLostReport(${JSON.stringify(report)})'>
-                                    Edit
-                                </button>
-
-                                <button class="delete-btn"
-                                    onclick="deleteLostReport(${report.id})">
-                                    Delete
-                                </button>
-
-                            </td>
-
-                        </tr>
-
-                    `;
-                });
-
-
-                html += `
-                        </tbody>
-                    </table>
-                `;
-            }
-
-
-            document.getElementById("lostList").innerHTML =
-                html;
-        });
-}
-
-
-// =====================================================
-// LOST REPORT - EDIT
-// =====================================================
-
-function editLostReport(report) {
-
-    document.getElementById("lostId").value =
-        report.id;
-
-    document.getElementById("lostDescription").value =
-        report.description;
-
-    document.getElementById("lostLocation").value =
-        report.location;
-
-    document.getElementById("lostDate").value =
-        report.date;
-
-    document.getElementById("lostCategory").value =
-        report.category.id;
-
-    document.getElementById("lostUser").value =
-        report.user.id;
-
-
-    document.getElementById("lostFormTitle").innerText =
-        "Update Lost Report";
-
-
-    document.querySelector("#lost .primary-btn").innerText =
-        "Update Lost Report";
-
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
     });
 }
 
 
-// =====================================================
+// ======================================================
+// LOST REPORT - EDIT
+// ======================================================
+
+async function editLost(id) {
+
+    try {
+
+        const response =
+            await fetch(`${API}/lost-reports/${id}`);
+
+        if (!response.ok) {
+            throw new Error("Unable to load lost report");
+        }
+
+        const report =
+            await response.json();
+
+
+        document.getElementById("lostId").value =
+            report.id;
+
+        document.getElementById("lostDescription").value =
+            report.description || "";
+
+        document.getElementById("lostBrand").value =
+            report.brand || "";
+
+        document.getElementById("lostColor").value =
+            report.color || "";
+
+        document.getElementById("lostDetails").value =
+            report.identifyingDetails || "";
+
+        document.getElementById("lostLocation").value =
+            report.location || "";
+
+        document.getElementById("lostDate").value =
+            report.date || "";
+
+
+        document.getElementById("lostCategory").value =
+            report.category
+                ? report.category.id
+                : "";
+
+
+        document.getElementById("lostUser").value =
+            report.user
+                ? report.user.id
+                : "";
+
+
+        showSection("add-lost");
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("Unable to load lost report.");
+
+    }
+}
+
+
+// ======================================================
 // LOST REPORT - DELETE
-// =====================================================
+// ======================================================
 
-function deleteLostReport(id) {
+async function deleteLost(id) {
 
-    if (!confirm("Are you sure you want to delete this lost report?")) {
+    if (!confirm("Delete this lost report?")) {
         return;
     }
 
 
-    fetch(`/lost-reports/${id}`, {
+    try {
 
-        method: "DELETE"
+        const response =
+            await fetch(
+                `${API}/lost-reports/${id}`,
+                {
+                    method: "DELETE"
+                }
+            );
 
-    })
 
-        .then(response => response.text())
+        if (!response.ok) {
+            throw new Error("Delete failed");
+        }
 
-        .then(data => {
 
-            alert("Lost report deleted successfully!");
+        alert("Lost report deleted successfully!");
 
-            loadLostReports();
+        await loadLostReports();
+        await loadDashboard();
 
-            loadDashboard();
 
-        })
+    } catch (error) {
 
-        .catch(error => {
+        console.error(error);
 
-            console.error(error);
-
-            alert("Error deleting lost report");
-        });
+        alert(
+            "Unable to delete lost report.\n\n" +
+            error.message
+        );
+    }
 }
 
 
-// =====================================================
-// LOST REPORT - CLEAR
-// =====================================================
+// ======================================================
+// LOST REPORT - RESET
+// ======================================================
 
-function clearLostForm() {
+function resetLostForm() {
 
-    document.getElementById("lostId").value = "";
-
-    document.getElementById("lostDescription").value = "";
-
-    document.getElementById("lostLocation").value = "";
-
-    document.getElementById("lostDate").value = "";
-
-    document.getElementById("lostCategory").value = "";
-
-    document.getElementById("lostUser").value = "";
-
-
-    document.getElementById("lostFormTitle").innerText =
-        "Add Lost Report";
-
-
-    document.querySelector("#lost .primary-btn").innerText =
-        "Add Lost Report";
-}
-
-
-// =====================================================
-// FOUND ITEM - ADD / UPDATE
-// =====================================================
-
-function saveFoundItem() {
+    const form =
+        document.getElementById("lostForm");
 
     const id =
-        document.getElementById("foundId").value;
+        document.getElementById("lostId");
 
-
-    const foundItem = {
-
-        description:
-        document.getElementById("foundDescription").value,
-
-        location:
-        document.getElementById("foundLocation").value,
-
-        date:
-        document.getElementById("foundDate").value,
-
-        category: {
-
-            id:
-            document.getElementById("foundCategory").value
-        },
-
-        user: {
-
-            id:
-            document.getElementById("foundUser").value
-        }
-    };
-
-
-    if (
-        !foundItem.description ||
-        !foundItem.location ||
-        !foundItem.date ||
-        !foundItem.category.id ||
-        !foundItem.user.id
-    ) {
-
-        alert("Please fill all found item fields");
-
-        return;
+    if (form) {
+        form.reset();
     }
-
-
-    let url = "/found-items";
-
-    let method = "POST";
-
 
     if (id) {
-
-        url = `/found-items/${id}`;
-
-        method = "PUT";
+        id.value = "";
     }
+}
 
 
-    fetch(url, {
+// ======================================================
+// FOUND ITEMS - LOAD
+// ======================================================
 
-        method: method,
+async function loadFoundItems() {
 
-        headers: {
-            "Content-Type": "application/json"
-        },
+    try {
 
-        body: JSON.stringify(foundItem)
+        const response =
+            await fetch(API + "/found-items");
 
-    })
+        if (!response.ok) {
+            throw new Error("Unable to load found items");
+        }
 
-        .then(response => response.json())
+        const items =
+            await response.json();
 
-        .then(data => {
+        const table =
+            document.getElementById("foundTable");
+
+        if (!table) return;
+
+        table.innerHTML = "";
+
+
+        if (items.length === 0) {
+
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7" class="empty">
+                        No found items found
+                    </td>
+                </tr>
+            `;
+
+            return;
+        }
+
+
+        items.forEach(item => {
+
+            const status =
+                item.status || "AVAILABLE";
+
+
+            let actions = "";
+
+
+            if (status === "AVAILABLE") {
+
+                actions = `
+
+                    <button
+                        class="claim-btn"
+                        onclick="claimFoundItem(${item.id})">
+                        Claim
+                    </button>
+
+                    <button
+                        class="edit-btn"
+                        onclick="editFound(${item.id})">
+                        Edit
+                    </button>
+
+                    <button
+                        class="delete-btn"
+                        onclick="deleteFound(${item.id})">
+                        Delete
+                    </button>
+
+                `;
+
+            } else if (status === "CLAIMED") {
+
+                actions = `
+
+                    <button
+                        class="return-btn"
+                        onclick="returnFoundItem(${item.id})">
+                        Return
+                    </button>
+
+                    <button
+                        class="edit-btn"
+                        onclick="editFound(${item.id})">
+                        Edit
+                    </button>
+
+                    <button
+                        class="delete-btn"
+                        onclick="deleteFound(${item.id})">
+                        Delete
+                    </button>
+
+                `;
+
+            } else if (status === "RETURNED") {
+
+                actions = `
+
+                    <span class="returned-text">
+                        Returned
+                    </span>
+
+                    <button
+                        class="delete-btn"
+                        onclick="deleteFound(${item.id})">
+                        Delete
+                    </button>
+
+                `;
+            }
+
+
+            table.innerHTML += `
+                <tr>
+
+                    <td>${item.id}</td>
+
+                    <td>${item.description || "-"}</td>
+
+                    <td>${item.brand || "-"}</td>
+
+                    <td>${item.color || "-"}</td>
+
+                    <td>${item.location || "-"}</td>
+
+                    <td>
+                        <span class="status-badge ${status}">
+                            ${status}
+                        </span>
+                    </td>
+
+                    <td class="action-buttons">
+                        ${actions}
+                    </td>
+
+                </tr>
+            `;
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "Found item error:",
+            error
+        );
+    }
+}
+
+
+// ======================================================
+// FOUND ITEM - SAVE
+// ======================================================
+
+const foundForm =
+    document.getElementById("foundForm");
+
+if (foundForm) {
+
+    foundForm.addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+
+        const id =
+            document.getElementById("foundId").value;
+
+
+        const categoryId =
+            Number(
+                document.getElementById("foundCategory").value
+            );
+
+
+        const userId =
+            Number(
+                document.getElementById("foundUser").value
+            );
+
+
+        const item = {
+
+            description:
+                document
+                    .getElementById("foundDescription")
+                    .value
+                    .trim(),
+
+            brand:
+                document
+                    .getElementById("foundBrand")
+                    .value
+                    .trim(),
+
+            color:
+                document
+                    .getElementById("foundColor")
+                    .value
+                    .trim(),
+
+            identifyingDetails:
+                document
+                    .getElementById("foundDetails")
+                    .value
+                    .trim(),
+
+            location:
+                document
+                    .getElementById("foundLocation")
+                    .value
+                    .trim(),
+
+            date:
+            document
+                .getElementById("foundDate")
+                .value,
+
+            category: {
+                id: categoryId
+            },
+
+            user: {
+                id: userId
+            }
+        };
+
+
+        console.log(
+            "Sending Found Item:",
+            item
+        );
+
+
+        try {
+
+            const url =
+                id
+                    ? `${API}/found-items/${id}`
+                    : `${API}/found-items`;
+
+            const method =
+                id ? "PUT" : "POST";
+
+
+            const response =
+                await fetch(url, {
+
+                    method: method,
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify(item)
+                });
+
+
+            const responseText =
+                await response.text();
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    responseText ||
+                    "Found item save failed"
+                );
+            }
+
 
             alert(
                 id
@@ -1105,340 +1422,291 @@ function saveFoundItem() {
                     : "Found item added successfully!"
             );
 
-            clearFoundForm();
 
-            loadFoundItems();
+            resetFoundForm();
 
-            loadDashboard();
-        })
+            await loadFoundItems();
+            await loadDashboard();
 
-        .catch(error => {
+            showSection("found-items");
 
-            console.error(error);
 
-            alert("Error saving found item");
-        });
-}
+        } catch (error) {
 
+            console.error(
+                "FOUND ITEM ERROR:",
+                error
+            );
 
-// =====================================================
-// FOUND ITEM - VIEW
-// =====================================================
+            alert(
+                "Unable to save found item.\n\n" +
+                error.message
+            );
+        }
 
-function loadFoundItems() {
-
-    fetch("/found-items")
-
-        .then(response => response.json())
-
-        .then(items => {
-
-            let html = "";
-
-
-            if (items.length === 0) {
-
-                html = `
-                    <div class="empty-message">
-                        No found items available
-                    </div>
-                `;
-
-            } else {
-
-                html = `
-                    <table class="data-table">
-
-                        <thead>
-
-                            <tr>
-
-                                <th>ID</th>
-
-                                <th>Description</th>
-
-                                <th>Location</th>
-
-                                <th>Date</th>
-
-                                <th>Category</th>
-
-                                <th>User</th>
-
-                                <th>Status</th>
-
-                                <th>Actions</th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-                `;
-
-
-                items.forEach(item => {
-
-                    html += `
-
-                        <tr>
-
-                            <td>${item.id}</td>
-
-                            <td>${item.description}</td>
-
-                            <td>${item.location}</td>
-
-                            <td>${item.date}</td>
-
-                            <td>
-                                ${item.category
-                        ? item.category.name
-                        : "-"}
-                            </td>
-
-                            <td>
-                                ${item.user
-                        ? item.user.name
-                        : "-"}
-                            </td>
-
-                            <td>
-
-                                <span class="status status-${item.status.toLowerCase()}">
-
-                                    ${item.status}
-
-                                </span>
-
-                            </td>
-
-                            <td>
-
-                                <button class="edit-btn"
-                                    onclick='editFoundItem(${JSON.stringify(item)})'>
-                                    Edit
-                                </button>
-
-                                <button class="delete-btn"
-                                    onclick="deleteFoundItem(${item.id})">
-                                    Delete
-                                </button>
-
-                                ${
-                        item.status === "AVAILABLE"
-                            ? `
-                                            <button class="status-btn"
-                                                onclick="changeFoundStatus(${item.id}, 'CLAIMED')">
-                                                Claim
-                                            </button>
-                                          `
-                            : ""
-                    }
-
-                                ${
-                        item.status === "CLAIMED"
-                            ? `
-                                            <button class="status-btn"
-                                                onclick="changeFoundStatus(${item.id}, 'RETURNED')">
-                                                Return
-                                            </button>
-                                          `
-                            : ""
-                    }
-
-                            </td>
-
-                        </tr>
-
-                    `;
-                });
-
-
-                html += `
-                        </tbody>
-                    </table>
-                `;
-            }
-
-
-            document.getElementById("foundList").innerHTML =
-                html;
-        });
-}
-
-
-// =====================================================
-// FOUND ITEM - EDIT
-// =====================================================
-
-function editFoundItem(item) {
-
-    document.getElementById("foundId").value =
-        item.id;
-
-    document.getElementById("foundDescription").value =
-        item.description;
-
-    document.getElementById("foundLocation").value =
-        item.location;
-
-    document.getElementById("foundDate").value =
-        item.date;
-
-    document.getElementById("foundCategory").value =
-        item.category.id;
-
-    document.getElementById("foundUser").value =
-        item.user.id;
-
-
-    document.getElementById("foundFormTitle").innerText =
-        "Update Found Item";
-
-
-    document.querySelector("#found .primary-btn").innerText =
-        "Update Found Item";
-
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
     });
 }
 
 
-// =====================================================
+// ======================================================
+// FOUND ITEM - EDIT
+// ======================================================
+
+async function editFound(id) {
+
+    try {
+
+        const response =
+            await fetch(`${API}/found-items/${id}`);
+
+        if (!response.ok) {
+            throw new Error("Unable to load found item");
+        }
+
+        const item =
+            await response.json();
+
+
+        document.getElementById("foundId").value =
+            item.id;
+
+        document.getElementById("foundDescription").value =
+            item.description || "";
+
+        document.getElementById("foundBrand").value =
+            item.brand || "";
+
+        document.getElementById("foundColor").value =
+            item.color || "";
+
+        document.getElementById("foundDetails").value =
+            item.identifyingDetails || "";
+
+        document.getElementById("foundLocation").value =
+            item.location || "";
+
+        document.getElementById("foundDate").value =
+            item.date || "";
+
+
+        document.getElementById("foundCategory").value =
+            item.category
+                ? item.category.id
+                : "";
+
+
+        document.getElementById("foundUser").value =
+            item.user
+                ? item.user.id
+                : "";
+
+
+        showSection("add-found");
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("Unable to load found item.");
+
+    }
+}
+
+
+// ======================================================
 // FOUND ITEM - DELETE
-// =====================================================
+// ======================================================
 
-function deleteFoundItem(id) {
+async function deleteFound(id) {
 
-    if (!confirm("Are you sure you want to delete this found item?")) {
+    if (!confirm("Delete this found item?")) {
         return;
     }
 
 
-    fetch(`/found-items/${id}`, {
+    try {
 
-        method: "DELETE"
-
-    })
-
-        .then(response => response.text())
-
-        .then(data => {
-
-            alert("Found item deleted successfully!");
-
-            loadFoundItems();
-
-            loadDashboard();
-
-        })
-
-        .catch(error => {
-
-            console.error(error);
-
-            alert("Error deleting found item");
-        });
-}
+        const response =
+            await fetch(
+                `${API}/found-items/${id}`,
+                {
+                    method: "DELETE"
+                }
+            );
 
 
-// =====================================================
-// FOUND ITEM - STATUS
-// =====================================================
-
-function changeFoundStatus(id, status) {
-
-    fetch(
-        `/found-items/${id}/status?status=${status}`,
-        {
-            method: "PUT"
+        if (!response.ok) {
+            throw new Error("Delete failed");
         }
-    )
 
-        .then(response => {
 
-            if (!response.ok) {
+        alert("Found item deleted successfully!");
 
-                return response.text().then(message => {
+        await loadFoundItems();
+        await loadDashboard();
 
-                    throw new Error(message);
-                });
-            }
 
-            return response.json();
-        })
+    } catch (error) {
 
-        .then(data => {
+        console.error(error);
 
-            alert(
-                `Item status changed to ${status}`
+        alert(
+            "Unable to delete found item.\n\n" +
+            error.message
+        );
+    }
+}
+
+
+// ======================================================
+// FOUND ITEM - CLAIM
+// ======================================================
+
+async function claimFoundItem(id) {
+
+    if (!confirm("Do you want to claim this item?")) {
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                `${API}/found-items/${id}/status?status=CLAIMED`,
+                {
+                    method: "PUT"
+                }
             );
 
-            loadFoundItems();
-        })
 
-        .catch(error => {
+        const responseText =
+            await response.text();
 
-            console.error(error);
 
-            alert(
-                "Status update failed: " +
-                error.message
+        if (!response.ok) {
+
+            throw new Error(
+                responseText ||
+                "Claim failed"
             );
-        });
+        }
+
+
+        alert("Item claimed successfully!");
+
+        await loadFoundItems();
+        await loadDashboard();
+
+
+    } catch (error) {
+
+        console.error(
+            "CLAIM ERROR:",
+            error
+        );
+
+
+        alert(
+            "Unable to claim item.\n\n" +
+            error.message
+        );
+    }
 }
 
 
-// =====================================================
-// FOUND ITEM - CLEAR
-// =====================================================
+// ======================================================
+// FOUND ITEM - RETURN
+// ======================================================
 
-function clearFoundForm() {
+async function returnFoundItem(id) {
 
-    document.getElementById("foundId").value = "";
-
-    document.getElementById("foundDescription").value = "";
-
-    document.getElementById("foundLocation").value = "";
-
-    document.getElementById("foundDate").value = "";
-
-    document.getElementById("foundCategory").value = "";
-
-    document.getElementById("foundUser").value = "";
+    if (
+        !confirm(
+            "Do you want to mark this item as returned?"
+        )
+    ) {
+        return;
+    }
 
 
-    document.getElementById("foundFormTitle").innerText =
-        "Add Found Item";
+    try {
+
+        const response =
+            await fetch(
+                `${API}/found-items/${id}/status?status=RETURNED`,
+                {
+                    method: "PUT"
+                }
+            );
 
 
-    document.querySelector("#found .primary-btn").innerText =
-        "Add Found Item";
+        const responseText =
+            await response.text();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                responseText ||
+                "Return failed"
+            );
+        }
+
+
+        alert("Item returned successfully!");
+
+        await loadFoundItems();
+        await loadDashboard();
+
+
+    } catch (error) {
+
+        console.error(
+            "RETURN ERROR:",
+            error
+        );
+
+
+        alert(
+            "Unable to return item.\n\n" +
+            error.message
+        );
+    }
 }
 
 
-// =====================================================
-// TEXT ESCAPE
-// =====================================================
+// ======================================================
+// FOUND ITEM - RESET
+// ======================================================
 
-function escapeText(text) {
+function resetFoundForm() {
 
-    return String(text)
-        .replace(/'/g, "\\'")
-        .replace(/"/g, "&quot;");
+    const form =
+        document.getElementById("foundForm");
+
+    const id =
+        document.getElementById("foundId");
+
+    if (form) {
+        form.reset();
+    }
+
+    if (id) {
+        id.value = "";
+    }
 }
 
 
-// =====================================================
+// ======================================================
 // INITIAL LOAD
-// =====================================================
+// ======================================================
 
-loadDashboard();
+document.addEventListener("DOMContentLoaded", function() {
 
-loadCategoriesForForms();
+    showSection("dashboard");
 
-loadUsersForForms();
+    loadDashboard();
+
+});

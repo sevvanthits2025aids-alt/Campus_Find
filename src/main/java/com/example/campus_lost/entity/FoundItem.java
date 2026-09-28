@@ -1,5 +1,6 @@
 package com.example.campus_lost.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
@@ -11,9 +12,10 @@ public class FoundItem {
     private Long id;
 
     private String description;
-
+    private String brand;
+    private String color;
+    private String identifyingDetails;
     private String location;
-
     private LocalDate date;
 
     @Enumerated(EnumType.STRING)
@@ -27,12 +29,28 @@ public class FoundItem {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public FoundItem() {
-    }
+    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name = "lost_report_id")
+    private LostReport lostReport;
 
-    public FoundItem(String description, String location, LocalDate date,
-                     Status status, Category category, User user) {
+    public FoundItem() {}
+
+    public FoundItem(
+            String description,
+            String brand,
+            String color,
+            String identifyingDetails,
+            String location,
+            LocalDate date,
+            Status status,
+            Category category,
+            User user) {
+
         this.description = description;
+        this.brand = brand;
+        this.color = color;
+        this.identifyingDetails = identifyingDetails;
         this.location = location;
         this.date = date;
         this.status = status;
@@ -50,6 +68,30 @@ public class FoundItem {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getBrand() {
+        return brand;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public String getIdentifyingDetails() {
+        return identifyingDetails;
+    }
+
+    public void setIdentifyingDetails(String identifyingDetails) {
+        this.identifyingDetails = identifyingDetails;
     }
 
     public String getLocation() {
@@ -90,5 +132,13 @@ public class FoundItem {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public LostReport getLostReport() {
+        return lostReport;
+    }
+
+    public void setLostReport(LostReport lostReport) {
+        this.lostReport = lostReport;
     }
 }
